@@ -1,4 +1,4 @@
-name: Build d3d9 32-bit DLL with cl.exe
+name: Build d3d9.dll 32-bit
 
 on:
   workflow_dispatch:
@@ -8,23 +8,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build d3d9.dll in 32-bit
+      - name: Build with MSBuild
         shell: cmd
         run: |
-          REM Locate latest VS install path
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSINSTALLDIR=%%i
-          
-          REM Initialize VS environment for 32-bit
+          REM Find latest VS installation path
+          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
+          REM Call vcvarsall for x86
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-
-          REM Compile DLL from d3d9_proxy.cpp
-          cl.exe /LD /EHsc d3d9_proxy.cpp /Fe:d3d9.dll
+          REM Build Release x86
+          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
 
       - name: Upload DLL artifact
         uses: actions/upload-artifact@v4
         with:
           name: d3d9-dll-32bit
-          path: d3d9.dll
+          path: bin\d3d9.dll

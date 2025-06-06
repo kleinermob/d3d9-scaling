@@ -27,19 +27,19 @@ jobs:
           echo Listing %GITHUB_WORKSPACE%\detours\Detours-main
           dir "%GITHUB_WORKSPACE%\detours\Detours-main"
 
-      - name: Set Detours directory path
+      - name: Set Detours main directory path
         id: setpath
         run: |
-          echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main\vc" >> $GITHUB_OUTPUT
+          echo "DETOURS_MAIN_DIR=%GITHUB_WORKSPACE%\detours\Detours-main" >> $GITHUB_OUTPUT
 
       - name: Verify detours.sln exists
         shell: cmd
         env:
-          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+          DETOURS_MAIN_DIR: ${{ steps.setpath.outputs.DETOURS_MAIN_DIR }}
         run: |
-          echo Checking for detours.sln in %DETOURS_DIR%
-          dir "%DETOURS_DIR%"
-          if exist "%DETOURS_DIR%\Detours.sln" (
+          echo Checking for detours.sln in %DETOURS_MAIN_DIR%
+          dir "%DETOURS_MAIN_DIR%"
+          if exist "%DETOURS_MAIN_DIR%\Detours.sln" (
             echo detours.sln found!
           ) else (
             echo detours.sln NOT found! Please check directory structure.
@@ -59,45 +59,49 @@ jobs:
       - name: Build Detours for x86
         shell: cmd
         env:
-          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+          DETOURS_MAIN_DIR: ${{ steps.setpath.outputs.DETOURS_MAIN_DIR }}
+          VSINSTALLDIR: ${{ env.VSINSTALLDIR }}
         run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          msbuild "%DETOURS_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=Win32
+          msbuild "%DETOURS_MAIN_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=Win32
 
       - name: Build Detours for x64
         shell: cmd
         env:
-          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+          DETOURS_MAIN_DIR: ${{ steps.setpath.outputs.DETOURS_MAIN_DIR }}
+          VSINSTALLDIR: ${{ env.VSINSTALLDIR }}
         run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
-          msbuild "%DETOURS_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=x64
+          msbuild "%DETOURS_MAIN_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=x64
 
       - name: Build 32-bit DLL with Detours
         shell: cmd
         env:
-          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+          DETOURS_MAIN_DIR: ${{ steps.setpath.outputs.DETOURS_MAIN_DIR }}
+          VSINSTALLDIR: ${{ env.VSINSTALLDIR }}
         run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          msbuild "%DETOURS_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=Win32 ^
-            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" ^
-            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X86" ^
+          msbuild "%DETOURS_MAIN_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=Win32 ^
+            /p:AdditionalIncludeDirectories="%DETOURS_MAIN_DIR%\include" ^
+            /p:AdditionalLibraryDirectories="%DETOURS_MAIN_DIR%\lib.X86" ^
             /p:AdditionalDependencies="detours.lib"
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
-          copy /Y "%DETOURS_DIR%\bin\detours.lib" "%GITHUB_WORKSPACE%\artifacts\x86\detours.lib"
-          copy /Y "%DETOURS_DIR%\bin\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x86\d3d9.dll"
+          copy /Y "%DETOURS_MAIN_DIR%\bin\detours.lib" "%GITHUB_WORKSPACE%\artifacts\x86\detours.lib"
+          copy /Y "%DETOURS_MAIN_DIR%\bin\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x86\d3d9.dll"
 
       - name: Build 64-bit DLL with Detours
         shell: cmd
         env:
-          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+          DETOURS_MAIN_DIR: ${{ steps.setpath.outputs.DETOURS_MAIN_DIR }}
+          VSINSTALLDIR: ${{ env.VSINSTALLDIR }}
         run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
-          msbuild "%DETOURS_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=x64 ^
-            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" ^
-            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X64" ^
+          msbuild "%DETOURS_MAIN_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=x64 ^
+            /p:AdditionalIncludeDirectories="%DETOURS_MAIN_DIR%\include" ^
+            /p:AdditionalLibraryDirectories="%DETOURS_MAIN_DIR%\lib.X64" ^
             /p:AdditionalDependencies="detours.lib"
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
-          copy /Y "%DETOURS_DIR%\bin\x64\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x64\d3d9.dll"
+          copy /Y "%DETOURS_MAIN_DIR%\bin\x64\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x64\d3d9.dll"
 
       - name: Upload 32-bit DLL artifact
         uses: actions/upload-artifact@v4

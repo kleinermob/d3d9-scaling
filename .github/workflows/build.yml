@@ -19,28 +19,31 @@ jobs:
           curl -L -o detours.zip https://github.com/microsoft/Detours/archive/refs/heads/master.zip
           unzip detours.zip -d detours
 
+      - name: List extracted files (debugging)
+        run: |
+          echo Listing %GITHUB_WORKSPACE%\detours
+          dir "%GITHUB_WORKSPACE%\detours"
+          echo Listing %GITHUB_WORKSPACE%\detours\Detours-main
+          dir "%GITHUB_WORKSPACE%\detours\Detours-main"
+
       - name: Set Detours directory path
         id: setpath
         run: |
+          # Based on directory listing, update this path if needed
+          # Suppose the sln is in Detours-main
           echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main" >> $GITHUB_OUTPUT
-
-      - name: Debug Detours directory contents
-        shell: cmd
-        env:
-          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
-        run: |
-          echo Detours directory: %DETOURS_DIR%
-          dir "%DETOURS_DIR%"
 
       - name: Verify detours.sln exists
         shell: cmd
         env:
           DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
         run: |
+          echo "Checking for detours.sln in %DETOURS_DIR%"
+          dir "%DETOURS_DIR%"
           if exist "%DETOURS_DIR%\detours.sln" (
-            echo "detours.sln found in %DETOURS_DIR%"
+            echo "detours.sln found!"
           ) else (
-            echo "detours.sln NOT found in %DETOURS_DIR%"
+            echo "detours.sln NOT found! Please check directory structure."
             exit 1
           )
 
@@ -80,7 +83,6 @@ jobs:
             /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" \
             /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X86" \
             /p:AdditionalDependencies="detours.lib"
-
           REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
           copy /Y "%DETOURS_DIR%\bin\detours.lib" "%GITHUB_WORKSPACE%\artifacts\x86\detours.lib"
@@ -96,7 +98,6 @@ jobs:
             /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" \
             /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X64" \
             /p:AdditionalDependencies="detours.lib"
-
           REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
           copy /Y "%DETOURS_DIR%\bin\x64\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x64\d3d9.dll"

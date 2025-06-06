@@ -30,8 +30,8 @@ jobs:
       - name: Set Detours directory path
         id: setpath
         run: |
-          echo detours_dir=%GITHUB_WORKSPACE%
-          echo detours_dir=%GITHUB_WORKSPACE% >> $GITHUB_OUTPUT
+          echo detours_dir=%GITHUB_WORKSPACE%/detours
+          echo detours_dir=%GITHUB_WORKSPACE%/detours >> $GITHUB_OUTPUT
 
       - name: Verify detours.sln exists
         shell: cmd

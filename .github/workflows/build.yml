@@ -30,8 +30,8 @@ jobs:
       - name: Set Detours directory path
         id: setpath
         run: |
-          REM Based on the directory listing, set the correct path
-          REM Assuming the extracted folder is Detours-main
+          # REM Based on the directory listing, set the correct path
+          # REM Assuming the extracted folder is Detours-main
           echo detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main
           echo detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main >> $GITHUB_OUTPUT
 

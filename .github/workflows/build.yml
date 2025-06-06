@@ -1,4 +1,4 @@
-name: Build d3d9 32-bit DLL with MSBuild
+name: Build d3d9 DLL 32-bit with MSBuild
 
 on:
   workflow_dispatch:
@@ -10,8 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Find MSBuild path
+        id: msbuild-path
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set MSBUILD_PATH=%i
+          echo ::set-output name=path::%MSBUILD_PATH%
+
       - name: Build DLL with MSBuild
-        run: msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86
+        shell: cmd
+        run: '"%MSBUILD_PATH%" d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86'
+        env:
+          MSBUILD_PATH: ${{ steps.msbuild-path.outputs.path }}
 
       - name: Upload DLL artifact
         uses: actions/upload-artifact@v4

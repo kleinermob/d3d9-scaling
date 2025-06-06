@@ -213,7 +213,7 @@ public:
         if (!initialized)
         {
             D3DDISPLAYMODE displayMode;
-            if (SUCCEEDED(realD3D->GetAdapterDisplayMode(Adapter, &displayMode))
+            if (SUCCEEDED(realD3D->GetAdapterDisplayMode(Adapter, &displayMode)))
             {
                 nativeWidth = displayMode.Width;
                 nativeHeight = displayMode.Height;

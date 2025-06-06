@@ -19,17 +19,20 @@ jobs:
           curl -L -o detours.zip https://github.com/microsoft/Detours/archive/refs/heads/master.zip
           unzip detours.zip -d detours
 
-      - name: List Detours directory contents
-        shell: cmd
-        run: |
-          dir "%GITHUB_WORKSPACE%\detours\Detours-main"
-
       - name: Set Detours directory path
         id: setpath
         run: |
           echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main" >> $GITHUB_OUTPUT
 
-      - name: Verify Detours solution exists
+      - name: Debug Detours directory contents
+        shell: cmd
+        env:
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+        run: |
+          echo Detours directory: %DETOURS_DIR%
+          dir "%DETOURS_DIR%"
+
+      - name: Verify detours.sln exists
         shell: cmd
         env:
           DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
@@ -44,7 +47,7 @@ jobs:
       - name: Find Visual Studio installation path
         shell: cmd
         run: |
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
+          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set "VSINSTALLDIR=%%i"
           echo VSINSTALLDIR=%VSINSTALLDIR%
           if not defined VSINSTALLDIR (
             echo "Visual Studio not found"
@@ -80,6 +83,7 @@ jobs:
 
           REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
+          copy /Y "%DETOURS_DIR%\bin\detours.lib" "%GITHUB_WORKSPACE%\artifacts\x86\detours.lib"
           copy /Y "%DETOURS_DIR%\bin\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x86\d3d9.dll"
 
       - name: Build 64-bit DLL with Detours

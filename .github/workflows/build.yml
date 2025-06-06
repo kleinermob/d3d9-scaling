@@ -13,10 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set build directory
-        id: set_dir
-        run: echo "##[set-output name=proj_dir;]$(System.DefaultWorkingDirectory)" 
-
       - name: Build 32-bit DLL
         shell: cmd
         working-directory: ${{ github.workspace }}
@@ -30,10 +26,10 @@ jobs:
           REM Build for x86
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
 
-          REM Make sure artifacts directory exists
-          mkdir "%GITHUB_WORKSPACE%\artifacts\x86"
-          
-          REM Copy the DLL to artifacts folder
+          REM Create artifacts directory if not exists
+          mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
+
+          REM Copy the built DLL to artifacts folder
           copy /Y "bin\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x86\"
 
       - name: Build 64-bit DLL
@@ -49,10 +45,10 @@ jobs:
           REM Build for x64
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m
 
-          REM Make sure artifacts directory exists
-          mkdir "%GITHUB_WORKSPACE%\artifacts\x64"
-          
-          REM Copy the DLL to artifacts folder
+          REM Create artifacts directory if not exists
+          mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
+
+          REM Copy the built DLL to artifacts folder
           copy /Y "bin\x64\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x64\"
 
       - name: Upload 32-bit DLL

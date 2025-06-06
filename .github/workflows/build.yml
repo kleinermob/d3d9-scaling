@@ -27,13 +27,12 @@ jobs:
           echo Listing %GITHUB_WORKSPACE%\detours\Detours-main
           dir "%GITHUB_WORKSPACE%\detours\Detours-main"
 
-      - name: Set Detours directory path
-        id: setpath
-        run: |
-          # REM Based on the directory listing, set the correct path
-          # REM Assuming the extracted folder is Detours-main
-          echo detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main
-          echo detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main >> $GITHUB_OUTPUT
+    - name: Set Detours directory path
+      id: setpath
+      run: |
+        #  REM Since detours.sln is in the root of the repo, set that path
+        echo detours_dir=%GITHUB_WORKSPACE%
+        echo detours_dir=%GITHUB_WORKSPACE% >> $GITHUB_OUTPUT
 
       - name: Verify detours.sln exists
         shell: cmd

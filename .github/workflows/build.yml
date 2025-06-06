@@ -11,103 +11,100 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Step 1: Download Detours source code
-      - name: Download Detours
+      - name: Download Detours source
         run: |
           curl -L -o detours.zip https://github.com/microsoft/Detours/archive/refs/heads/master.zip
           unzip detours.zip -d detours
 
-      # Step 2: Verify directory contents
-      - name: List Detours Directory Contents
+      - name: List Detours directory contents
         shell: cmd
         run: |
           dir "%GITHUB_WORKSPACE%\detours\Detours-main"
 
-      # Step 3: Set variables for the Detours directory
-      - name: Set Detours Directory Path
+      - name: Set Detours directory path
         id: setpath
         run: |
-          echo ::set-output name=detours_dir::%GITHUB_WORKSPACE%\detours\Detours-main
+          echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main" >> $GITHUB_OUTPUT
 
-      # Step 4: Build Detours library for x86 and x64
-      - name: Build Detours Library
+      - name: Verify Detours solution exists
+        shell: cmd
+        env:
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+        run: |
+          if exist "%DETOURS_DIR%\detours.sln" (
+            echo "detours.sln found in %DETOURS_DIR%"
+          ) else (
+            echo "detours.sln NOT found in %DETOURS_DIR%"
+            exit 1
+          )
+
+      - name: Find Visual Studio installation path
         shell: cmd
         run: |
-          set DETOURS_DIR=%{{ steps.setpath.outputs.detours_dir }}
-          
-          REM Verify detours.sln exists
-          dir "%DETOURS_DIR%"
-          
-          REM Find Visual Studio installation path
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
+          echo VSINSTALLDIR=%VSINSTALLDIR%
+          if not defined VSINSTALLDIR (
+            echo "Visual Studio not found"
+            exit 1
+          )
 
-          REM Build for x86
+      - name: Build Detours for x86
+        shell: cmd
+        env:
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+        run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
           msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=Win32
 
-          REM Build for x64
+      - name: Build Detours for x64
+        shell: cmd
+        env:
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+        run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
           msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=x64
 
-      # Step 5: Build 32-bit DLL with Detours
-      - name: Build 32-bit DLL
+      - name: Build 32-bit DLL with Detours
         shell: cmd
-        working-directory: ${{ github.workspace }}
         env:
-          DETOURS_INCLUDE: ${{ github.workspace }}\detours\Detours-main\include
-          DETOURS_LIB_X86: ${{ github.workspace }}\detours\Detours-main\lib.X86
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
         run: |
-          REM Find VS install path
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-
-          REM Call vcvarsall for x86
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-
-          REM Build solution
-          msbuild "%GITHUB_WORKSPACE%\detours\Detours-main\detours.sln" /p:Configuration=Release /p:Platform=Win32 /m \
-            /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
-            /p:AdditionalLibraryDirectories="%DETOURS_LIB_X86%" \
+          msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=Win32 \
+            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" \
+            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X86" \
             /p:AdditionalDependencies="detours.lib"
 
-          REM Save DLL to artifacts
+          REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
-          copy /Y "bin\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x86\"
+          copy /Y "%DETOURS_DIR%\bin\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x86\d3d9.dll"
 
-      # Step 6: Build 64-bit DLL with Detours
-      - name: Build 64-bit DLL
+      - name: Build 64-bit DLL with Detours
         shell: cmd
-        working-directory: ${{ github.workspace }}
         env:
-          DETOURS_INCLUDE: ${{ github.workspace }}\detours\Detours-main\include
-          DETOURS_LIB_X64: ${{ github.workspace }}\detours\Detours-main\lib.X64
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
         run: |
-          REM Find VS install path
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-
-          REM Call vcvarsall for x64
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
-
-          REM Build solution
-          msbuild "%GITHUB_WORKSPACE%\detours\Detours-main\detours.sln" /p:Configuration=Release /p:Platform=x64 /m \
-            /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
-            /p:AdditionalLibraryDirectories="%DETOURS_LIB_X64%" \
+          msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=x64 \
+            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" \
+            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X64" \
             /p:AdditionalDependencies="detours.lib"
 
-          REM Save DLL to artifacts
+          REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
-          copy /Y "bin\x64\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x64\"
+          copy /Y "%DETOURS_DIR%\bin\x64\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x64\d3d9.dll"
 
-      # Step 7: Upload artifacts
-      - name: Upload 32-bit DLL
+      - name: Upload 32-bit DLL artifact
         uses: actions/upload-artifact@v4
         with:
-          name: d3d9-dll-32bit
+          name: d3d9-x86
           path: artifacts\x86
 
-      - name: Upload 64-bit DLL
+      - name: Upload 64-bit DLL artifact
         uses: actions/upload-artifact@v4
         with:
-          name: d3d9-dll-64bit
+          name: d3d9-x64
           path: artifacts\x64

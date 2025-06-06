@@ -2,12 +2,25 @@
   <ItemGroup>
     <ClCompile Include="d3d9_proxy.cpp" />
   </ItemGroup>
-  <PropertyGroup>
+  <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset> <!-- Adjust VS version -->
+    <PlatformToolset>v143</PlatformToolset>
     <TargetName>d3d9</TargetName>
     <OutDir>$(MSBuildProjectDirectory)\bin\</OutDir>
     <Platform>x86</Platform>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <!-- Define Release config and x86 platform explicitly -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <TargetName>d3d9</TargetName>
+    <OutDir>$(MSBuildProjectDirectory)\bin\</OutDir>
+    <Platform>x86</Platform>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <Optimization>true</Optimization>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
 </Project>

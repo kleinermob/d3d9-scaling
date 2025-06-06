@@ -27,10 +27,10 @@ jobs:
           echo Listing %GITHUB_WORKSPACE%\detours\Detours-main
           dir "%GITHUB_WORKSPACE%\detours\Detours-main"
 
-- name: Set Detours directory path
-  id: setpath
-  run: |
-    echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main\vc" >> $GITHUB_OUTPUT
+      - name: Set Detours directory path
+        id: setpath
+        run: |
+          echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main\vc" >> $GITHUB_OUTPUT
 
       - name: Verify detours.sln exists
         shell: cmd
@@ -56,13 +56,13 @@ jobs:
             exit 1
           )
 
-- name: Build Detours for x86
-  shell: cmd
-  env:
-    DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
-  run: |
-    call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-    msbuild "%DETOURS_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=Win32
+      - name: Build Detours for x86
+        shell: cmd
+        env:
+          DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
+        run: |
+          call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
+          msbuild "%DETOURS_DIR%\Detours.sln" /p:Configuration=Release /p:Platform=Win32
 
       - name: Build Detours for x64
         shell: cmd

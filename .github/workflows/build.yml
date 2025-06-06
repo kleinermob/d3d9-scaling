@@ -18,12 +18,11 @@ jobs:
         run: |
           curl -L -o detours.zip https://github.com/microsoft/Detours/archive/refs/heads/master.zip
           unzip detours.zip -d detours
-          
-      # Optional: Build Detours library (if you need a static lib)
+
+      # Step 2: Build Detours library for x86 and x64
       - name: Build Detours Library
         shell: cmd
         run: |
-          REM Set paths
           set DETOURS_DIR=%GITHUB_WORKSPACE%\detours\Detours-master
           
           REM Find Visual Studio installation
@@ -36,8 +35,8 @@ jobs:
           REM Build for x64
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
           msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=x64
-          
-      # Step 2: Build 32-bit DLL
+
+      # Step 3: Build 32-bit DLL with Detours
       - name: Build 32-bit DLL
         shell: cmd
         working-directory: ${{ github.workspace }}
@@ -54,14 +53,15 @@ jobs:
           REM Build for x86 with Detours include and lib paths
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m \
             /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
-            /p:AdditionalLibraryDirectories="%DETOURS_LIB_X86%"
-          
+            /p:AdditionalLibraryDirectories="%DETOURS_LIB_X86%" \
+            /p:AdditionalDependencies="detours.lib"
+
           REM Create artifacts directory if not exists
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
           REM Copy the built DLL to artifacts folder
           copy /Y "bin\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x86\"
-      
-      # Step 3: Build 64-bit DLL
+
+      # Step 4: Build 64-bit DLL with Detours
       - name: Build 64-bit DLL
         shell: cmd
         working-directory: ${{ github.workspace }}
@@ -78,14 +78,15 @@ jobs:
           REM Build for x64 with Detours include and lib paths
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m \
             /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
-            /p:AdditionalLibraryDirectories="%DETOURS_LIB_X64%"
-          
+            /p:AdditionalLibraryDirectories="%DETOURS_LIB_X64%" \
+            /p:AdditionalDependencies="detours.lib"
+
           REM Create artifacts directory if not exists
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
           REM Copy the built DLL to artifacts folder
           copy /Y "bin\x64\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x64\"
 
-      # Step 4: Upload artifacts
+      # Step 5: Upload artifacts
       - name: Upload 32-bit DLL
         uses: actions/upload-artifact@v4
         with:

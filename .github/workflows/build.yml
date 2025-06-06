@@ -10,18 +10,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup MSVC environment and build DLL (cmd shell)
+    - name: Setup MSVC and build DLL
       shell: cmd
       run: |
-        REM Find Visual Studio installation path
         for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSINSTALLDIR=%%i
         echo VSINSTALLDIR=%VSINSTALLDIR%
-        
-        REM Run vcvarsall.bat for 32-bit tools
-        call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-        
-        REM Compile the DLL
-        cl.exe /LD /EHsc d3d9_proxy.cpp /Fe:d3d9.dll
+        call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86 && cl.exe /LD /EHsc d3d9_proxy.cpp /Fe:d3d9.dll
 
     - name: Upload DLL artifact
       uses: actions/upload-artifact@v4

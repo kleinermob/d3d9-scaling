@@ -9,36 +9,59 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [x86, x64]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Find Visual Studio installation path
         id: vswhere
+        shell: pwsh
         run: |
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-          echo "VSINSTALLDIR=%VSINSTALLDIR%" >> $GITHUB_OUTPUT
+          $vsPath = (& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath)
+          Write-Host "VSINSTALLDIR=$vsPath"
+          echo "VSINSTALLDIR=$vsPath" >> $env:GITHUB_OUTPUT
 
-      - name: Build x86
+      - name: Set environment for ${{ matrix.platform }}
         shell: cmd
         run: |
-          call "%{ { steps.vswhere.outputs.VSINSTALLDIR } }%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
+          if /i "${{ matrix.platform }}"=="x86" (
+            call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
+          ) else (
+            call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
+          )
 
-      - name: Build x64
+      - name: Build for ${{ matrix.platform }}
         shell: cmd
         run: |
-          call "%{ { steps.vswhere.outputs.VSINSTALLDIR } }%\VC\Auxiliary\Build\vcvarsall.bat" x64
-          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=${{ matrix.platform }} /m
 
-      - name: Prepare artifact folders
+      - name: Save DLL artifact
         run: |
-          mkdir -p artifacts/x86
-          mkdir -p artifacts/x64
-          copy /Y bin\x86\d3d9.dll artifacts\x86\
-          copy /Y bin\x64\d3d9.dll artifacts\x64\
+          mkdir artifacts\${{ matrix.platform }}
+          copy /Y bin\${{ matrix.platform }}\d3d9.dll artifacts\${{ matrix.platform }}\
 
-      - name: Upload artifacts
+  # After both matrix jobs complete, upload artifacts
+  upload-artifacts:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download x86 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x86
+          path: artifacts/x86
+
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x64
+          path: artifacts/x64
+
+      - name: Upload combined DLLs
         uses: actions/upload-artifact@v4
         with:
           name: d3d9-dlls

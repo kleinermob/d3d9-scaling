@@ -8,18 +8,15 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Setup MSVC environment for 32-bit
+    - name: Build d3d9.dll 32-bit using MSVC (cmd shell)
+      shell: cmd
       run: |
         call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x86
-
-    - name: Compile d3d9_proxy.cpp to 32-bit DLL named d3d9.dll
-      run: |
         cl.exe /LD /EHsc d3d9_proxy.cpp /Fe:d3d9.dll
 
-    - name: Upload DLL as artifact
+    - name: Upload DLL artifact
       uses: actions/upload-artifact@v4
       with:
         name: d3d9-dll-32bit

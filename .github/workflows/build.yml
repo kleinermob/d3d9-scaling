@@ -13,44 +13,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set build directory
+        id: set_dir
+        run: echo "##[set-output name=proj_dir;]$(System.DefaultWorkingDirectory)" 
+
       - name: Build 32-bit DLL
         shell: cmd
+        working-directory: ${{ github.workspace }}
         run: |
           REM Find latest VS installation path
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
           
           REM Call vcvarsall for x86
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          
+
           REM Build for x86
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
+
+          REM Make sure artifacts directory exists
+          mkdir "%GITHUB_WORKSPACE%\artifacts\x86"
           
-          REM Save artifact path
-          xcopy /Y /I "bin\x86\d3d9.dll" "artifacts\x86\"
+          REM Copy the DLL to artifacts folder
+          copy /Y "bin\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x86\"
 
       - name: Build 64-bit DLL
         shell: cmd
+        working-directory: ${{ github.workspace }}
         run: |
           REM Find latest VS installation path
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
           
           REM Call vcvarsall for x64
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
-          
+
           REM Build for x64
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+
+          REM Make sure artifacts directory exists
+          mkdir "%GITHUB_WORKSPACE%\artifacts\x64"
           
-          REM Save artifact path
-          xcopy /Y /I "bin\x64\d3d9.dll" "artifacts\x64\"
+          REM Copy the DLL to artifacts folder
+          copy /Y "bin\x64\d3d9.dll" "%GITHUB_WORKSPACE%\artifacts\x64\"
 
       - name: Upload 32-bit DLL
         uses: actions/upload-artifact@v4
         with:
           name: d3d9-dll-32bit
-          path: artifacts\x86\
+          path: artifacts\x86
 
       - name: Upload 64-bit DLL
         uses: actions/upload-artifact@v4
         with:
           name: d3d9-dll-64bit
-          path: artifacts\x64\
+          path: artifacts\x64

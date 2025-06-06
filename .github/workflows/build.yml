@@ -20,6 +20,7 @@ jobs:
           unzip detours.zip -d detours
 
       - name: List extracted files (debugging)
+        shell: cmd
         run: |
           echo Listing %GITHUB_WORKSPACE%\detours
           dir "%GITHUB_WORKSPACE%\detours"
@@ -29,21 +30,22 @@ jobs:
       - name: Set Detours directory path
         id: setpath
         run: |
-          # Based on directory listing, update this path if needed
-          # Suppose the sln is in Detours-main
-          echo "detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main" >> $GITHUB_OUTPUT
+          REM Based on the directory listing, set the correct path
+          REM Assuming the extracted folder is Detours-main
+          echo detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main
+          echo detours_dir=%GITHUB_WORKSPACE%\detours\Detours-main >> $GITHUB_OUTPUT
 
       - name: Verify detours.sln exists
         shell: cmd
         env:
           DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
         run: |
-          echo "Checking for detours.sln in %DETOURS_DIR%"
+          echo Checking for detours.sln in %DETOURS_DIR%
           dir "%DETOURS_DIR%"
           if exist "%DETOURS_DIR%\detours.sln" (
-            echo "detours.sln found!"
+            echo detours.sln found!
           ) else (
-            echo "detours.sln NOT found! Please check directory structure."
+            echo detours.sln NOT found! Please check directory structure.
             exit 1
           )
 
@@ -79,9 +81,9 @@ jobs:
           DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
         run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=Win32 \
-            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" \
-            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X86" \
+          msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=Win32 ^
+            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" ^
+            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X86" ^
             /p:AdditionalDependencies="detours.lib"
           REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
@@ -94,9 +96,9 @@ jobs:
           DETOURS_DIR: ${{ steps.setpath.outputs.detours_dir }}
         run: |
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
-          msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=x64 \
-            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" \
-            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X64" \
+          msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=x64 ^
+            /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" ^
+            /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X64" ^
             /p:AdditionalDependencies="detours.lib"
           REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL

@@ -9,59 +9,45 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        platform: [x86, x64]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Find Visual Studio installation path
         id: vswhere
-        shell: pwsh
         run: |
-          $vsPath = (& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath)
-          Write-Host "VSINSTALLDIR=$vsPath"
-          echo "VSINSTALLDIR=$vsPath" >> $env:GITHUB_OUTPUT
-
-      - name: Set environment for ${{ matrix.platform }}
-        shell: cmd
-        run: |
-          if /i "${{ matrix.platform }}"=="x86" (
-            call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          ) else (
-            call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
+          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do (
+            echo "VSINSTALLDIR=%%i"
+            echo "VSINSTALLDIR=%%i" >> "%GITHUB_OUTPUT%"
           )
 
-      - name: Build for ${{ matrix.platform }}
+      - name: Build x86
         shell: cmd
         run: |
-          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=${{ matrix.platform }} /m
+          REM Set VSINSTALLDIR environment variable
+          set "VSINSTALLDIR=%{{ steps.vswhere.outputs.VSINSTALLDIR }}"
+          
+          REM Run vcvarsall.bat to set environment variables
+          call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
+          
+          REM Build the project
+          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
 
-      - name: Save DLL artifact
+      - name: Build x64
+        shell: cmd
         run: |
-          mkdir artifacts\${{ matrix.platform }}
-          copy /Y bin\${{ matrix.platform }}\d3d9.dll artifacts\${{ matrix.platform }}\
+          set "VSINSTALLDIR=%{{ steps.vswhere.outputs.VSINSTALLDIR }}"
+          call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
+          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m
 
-  # After both matrix jobs complete, upload artifacts
-  upload-artifacts:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download x86 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: x86
-          path: artifacts/x86
+      - name: Prepare artifact folders
+        run: |
+          mkdir artifacts\x86
+          mkdir artifacts\x64
+          copy /Y bin\x86\d3d9.dll artifacts\x86\
+          copy /Y bin\x64\d3d9.dll artifacts\x64\
 
-      - name: Download x64 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: x64
-          path: artifacts/x64
-
-      - name: Upload combined DLLs
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: d3d9-dlls

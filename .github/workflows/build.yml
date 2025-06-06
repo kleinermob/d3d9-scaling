@@ -30,7 +30,6 @@ jobs:
       - name: Set Detours directory path
         id: setpath
         run: |
-          REM Since detours.sln is in the root of the repo, set that path
           echo detours_dir=%GITHUB_WORKSPACE%
           echo detours_dir=%GITHUB_WORKSPACE% >> $GITHUB_OUTPUT
 
@@ -84,7 +83,6 @@ jobs:
             /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" ^
             /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X86" ^
             /p:AdditionalDependencies="detours.lib"
-          REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
           copy /Y "%DETOURS_DIR%\bin\detours.lib" "%GITHUB_WORKSPACE%\artifacts\x86\detours.lib"
           copy /Y "%DETOURS_DIR%\bin\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x86\d3d9.dll"
@@ -99,7 +97,6 @@ jobs:
             /p:AdditionalIncludeDirectories="%DETOURS_DIR%\include" ^
             /p:AdditionalLibraryDirectories="%DETOURS_DIR%\lib.X64" ^
             /p:AdditionalDependencies="detours.lib"
-          REM Copy the built DLL
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
           copy /Y "%DETOURS_DIR%\bin\x64\detours.dll" "%GITHUB_WORKSPACE%\artifacts\x64\d3d9.dll"
 

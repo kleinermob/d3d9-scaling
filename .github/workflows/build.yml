@@ -1,4 +1,4 @@
-name: Build d3d9.dll 32-bit
+name: Build d3d9.dll 32-bit and 64-bit
 
 on:
   push:
@@ -9,22 +9,30 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
+    strategy:
+      matrix:
+        platform: [x86, x64]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build with MSBuild
+      - name: Find Visual Studio installation path
+        id: vswhere
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
+          echo "VSINSTALLDIR=%VSINSTALLDIR%" >> $GITHUB_OUTPUT
+
+      - name: Setup environment for build
         shell: cmd
         run: |
-          REM Find latest VS installation path
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-          REM Call vcvarsall for x86
-          call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          REM Build Release x86
-          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
+          call "%{ { steps.vswhere.outputs.VSINSTALLDIR } }%\VC\Auxiliary\Build\vcvarsall.bat" %{ { matrix.platform } }
+      
+      - name: Build with MSBuild for ${{ matrix.platform }}
+        shell: cmd
+        run: |
+          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=${{ matrix.platform }} /m
 
       - name: Upload DLL artifact
         uses: actions/upload-artifact@v4
         with:
-          name: d3d9-dll-32bit
-          path: bin\d3d9.dll
+          name: d3d9-dll-${{ matrix.platform }}
+          path: bin\${{ matrix.platform }}\d3d9.dll

@@ -1,4 +1,4 @@
-name: Build d3d9.dll for x86 and x64
+name: Build d3d9.dll for both 32-bit and 64-bit
 
 on:
   push:
@@ -13,42 +13,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Find Visual Studio installation path
-        id: find_vs
+      - name: Build 32-bit DLL
         shell: cmd
         run: |
-          set "VS_PATH="
-          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do (
-            set "VS_PATH=%%i"
-          )
-          echo "VSINSTALLDIR=%VS_PATH%"
-          echo "VSINSTALLDIR=%VS_PATH%" >> "%GITHUB_OUTPUT"
-
-      - name: Build x86
-        shell: cmd
-        run: |
-          set "VSINSTALLDIR=%{{ steps.find_vs.outputs.VSINSTALLDIR }}"
-          echo Using Visual Studio at: %VSINSTALLDIR%
+          REM Find latest VS installation path
+          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
+          
+          REM Call vcvarsall for x86
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
+          
+          REM Build for x86
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
+          
+          REM Save artifact path
+          xcopy /Y /I "bin\x86\d3d9.dll" "artifacts\x86\"
 
-      - name: Build x64
+      - name: Build 64-bit DLL
         shell: cmd
         run: |
-          set "VSINSTALLDIR=%{{ steps.find_vs.outputs.VSINSTALLDIR }}"
-          echo Using Visual Studio at: %VSINSTALLDIR%
+          REM Find latest VS installation path
+          for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
+          
+          REM Call vcvarsall for x64
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
+          
+          REM Build for x64
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+          
+          REM Save artifact path
+          xcopy /Y /I "bin\x64\d3d9.dll" "artifacts\x64\"
 
-      - name: Prepare artifact folders
-        run: |
-          mkdir artifacts\x86
-          mkdir artifacts\x64
-          copy /Y bin\x86\d3d9.dll artifacts\x86\
-          copy /Y bin\x64\d3d9.dll artifacts\x64\
-
-      - name: Upload artifacts
+      - name: Upload 32-bit DLL
         uses: actions/upload-artifact@v4
         with:
-          name: d3d9-dlls
-          path: artifacts/
+          name: d3d9-dll-32bit
+          path: artifacts\x86\
+
+      - name: Upload 64-bit DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: d3d9-dll-64bit
+          path: artifacts\x64\

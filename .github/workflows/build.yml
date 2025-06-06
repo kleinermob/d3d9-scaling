@@ -14,29 +14,29 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Find Visual Studio installation path
-        id: vswhere
+        id: find_vs
+        shell: cmd
         run: |
+          set "VS_PATH="
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do (
-            echo "VSINSTALLDIR=%%i"
-            echo "VSINSTALLDIR=%%i" >> "%GITHUB_OUTPUT%"
+            set "VS_PATH=%%i"
           )
+          echo "VSINSTALLDIR=%VS_PATH%"
+          echo "VSINSTALLDIR=%VS_PATH%" >> "%GITHUB_OUTPUT"
 
       - name: Build x86
         shell: cmd
         run: |
-          REM Set VSINSTALLDIR environment variable
-          set "VSINSTALLDIR=%{{ steps.vswhere.outputs.VSINSTALLDIR }}"
-          
-          REM Run vcvarsall.bat to set environment variables
+          set "VSINSTALLDIR=%{{ steps.find_vs.outputs.VSINSTALLDIR }}"
+          echo Using Visual Studio at: %VSINSTALLDIR%
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          
-          REM Build the project
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m
 
       - name: Build x64
         shell: cmd
         run: |
-          set "VSINSTALLDIR=%{{ steps.vswhere.outputs.VSINSTALLDIR }}"
+          set "VSINSTALLDIR=%{{ steps.find_vs.outputs.VSINSTALLDIR }}"
+          echo Using Visual Studio at: %VSINSTALLDIR%
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
           msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m
 

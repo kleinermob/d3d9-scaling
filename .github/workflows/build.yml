@@ -39,7 +39,7 @@ jobs:
         run: |
           echo Checking for detours.sln in %DETOURS_MAIN_DIR%
           dir "%DETOURS_MAIN_DIR%"
-          if exist "%DETOURS_MAIN_DIR%\Detours.sln" (
+          if exist "%DETOURS_MAIN_DIR%\vc\Detours.sln" (
             echo detours.sln found!
           ) else (
             echo detours.sln NOT found! Please check directory structure.

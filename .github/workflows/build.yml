@@ -18,6 +18,8 @@ jobs:
         run: |
           curl -L -o detours.zip https://github.com/microsoft/Detours/archive/refs/heads/master.zip
           unzip detours.zip -d detours
+          # List files to verify presence of detours.sln
+          dir detours\Detours-master
 
       # Step 2: Build Detours library for x86 and x64
       - name: Build Detours Library
@@ -51,11 +53,11 @@ jobs:
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
           
           REM Build for x86 with Detours include and lib paths
-          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86 /m \
+          msbuild "%GITHUB_WORKSPACE%\detours\Detours-master\detours.sln" /p:Configuration=Release /p:Platform=Win32 /m \
             /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
             /p:AdditionalLibraryDirectories="%DETOURS_LIB_X86%" \
             /p:AdditionalDependencies="detours.lib"
-
+          
           REM Create artifacts directory if not exists
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
           REM Copy the built DLL to artifacts folder
@@ -76,11 +78,11 @@ jobs:
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
           
           REM Build for x64 with Detours include and lib paths
-          msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x64 /m \
+          msbuild "%GITHUB_WORKSPACE%\detours\Detours-master\detours.sln" /p:Configuration=Release /p:Platform=x64 /m \
             /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
             /p:AdditionalLibraryDirectories="%DETOURS_LIB_X64%" \
             /p:AdditionalDependencies="detours.lib"
-
+          
           REM Create artifacts directory if not exists
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
           REM Copy the built DLL to artifacts folder

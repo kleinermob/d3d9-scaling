@@ -18,7 +18,7 @@ jobs:
         run: |
           curl -L -o detours.zip https://github.com/microsoft/Detours/archive/refs/heads/master.zip
           unzip detours.zip -d detours
-          # List files to verify structure
+          # Verify folder structure
           dir detours\Detours-main
 
       # Step 2: Build Detours library for x86 and x64
@@ -26,14 +26,17 @@ jobs:
         shell: cmd
         run: |
           set DETOURS_DIR=%GITHUB_WORKSPACE%\detours\Detours-main
-          
+
+          REM Verify the presence of detours.sln
+          dir "%DETOURS_DIR%"
+
           REM Find Visual Studio installation
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-          
+
           REM Build for x86
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
           msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=Win32
-          
+
           REM Build for x64
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
           msbuild "%DETOURS_DIR%\detours.sln" /p:Configuration=Release /p:Platform=x64
@@ -48,16 +51,16 @@ jobs:
         run: |
           REM Find latest VS installation path
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-          
+
           REM Call vcvarsall for x86
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86
-          
+
           REM Build for x86 with Detours include and lib paths
           msbuild "%GITHUB_WORKSPACE%\detours\Detours-main\detours.sln" /p:Configuration=Release /p:Platform=Win32 /m \
             /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
             /p:AdditionalLibraryDirectories="%DETOURS_LIB_X86%" \
             /p:AdditionalDependencies="detours.lib"
-          
+
           REM Create artifacts directory if not exists
           mkdir "%GITHUB_WORKSPACE%\artifacts\x86" 2>NUL
           REM Copy the built DLL to artifacts folder
@@ -73,16 +76,16 @@ jobs:
         run: |
           REM Find latest VS installation path
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath`) do set VSINSTALLDIR=%%i
-          
+
           REM Call vcvarsall for x64
           call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x64
-          
+
           REM Build for x64 with Detours include and lib paths
           msbuild "%GITHUB_WORKSPACE%\detours\Detours-main\detours.sln" /p:Configuration=Release /p:Platform=x64 /m \
             /p:AdditionalIncludeDirectories="%DETOURS_INCLUDE%" \
             /p:AdditionalLibraryDirectories="%DETOURS_LIB_X64%" \
             /p:AdditionalDependencies="detours.lib"
-          
+
           REM Create artifacts directory if not exists
           mkdir "%GITHUB_WORKSPACE%\artifacts\x64" 2>NUL
           REM Copy the built DLL to artifacts folder

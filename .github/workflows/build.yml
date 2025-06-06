@@ -26,7 +26,7 @@ jobs:
 
     - name: Create Visual Studio project file
       run: |
-        $projectContent = @"
+        $projectContent = @'
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
@@ -93,10 +93,10 @@ jobs:
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
-"@
+'@
         Set-Content -Path "d3d9proxy.vcxproj" -Value $projectContent
 
-        $defContent = @"
+        $defContent = @'
 LIBRARY d3d9.dll
 EXPORTS
     D3DPERF_BeginEvent=Real_D3DPERF_BeginEvent @1
@@ -110,7 +110,7 @@ EXPORTS
     DebugSetMute=Real_DebugSetMute @9
     Direct3DCreate9=Real_Direct3DCreate9 @10
     Direct3DCreate9Ex=Real_Direct3DCreate9Ex @11
-"@
+'@
         Set-Content -Path "d3d9.def" -Value $defContent
 
     - name: Build DLL

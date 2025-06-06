@@ -1,4 +1,4 @@
-name: Build d3d9 32-bit DLL
+name: Build d3d9 32-bit DLL with MSBuild
 
 on:
   workflow_dispatch:
@@ -8,17 +8,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup MSVC and build DLL
-      shell: cmd
-      run: |
-        for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSINSTALLDIR=%%i
-        echo VSINSTALLDIR=%VSINSTALLDIR%
-        call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvarsall.bat" x86 && cl.exe /LD /EHsc d3d9_proxy.cpp /Fe:d3d9.dll
+      - name: Build DLL with MSBuild
+        run: msbuild d3d9_proxy.vcxproj /p:Configuration=Release /p:Platform=x86
 
-    - name: Upload DLL artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: d3d9-dll-32bit
-        path: d3d9.dll
+      - name: Upload DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: d3d9-dll-32bit
+          path: bin\d3d9.dll

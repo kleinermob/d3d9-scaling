@@ -13,23 +13,22 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v1
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v1
 
-    - name: Add MSBuild to PATH
-      run: |
-        echo "Adding MSBuild to PATH"
-        echo "$env:MSBUILD_PATH" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Add MSBuild to PATH
+        run: |
+          echo "Adding MSBuild to PATH"
+          echo "$env:MSBUILD_PATH" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-    - name: Create Visual Studio project file
-      run: |
-        $projectContent = @'
-
+      - name: Create Visual Studio project file
+        shell: pwsh
+        run: |
+          $projectContent = @'
 <?xml version="1.0" encoding="utf-8"?>
-
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Release|Win32">
@@ -96,9 +95,9 @@ jobs:
   </ImportGroup>
 </Project>
 '@
-        Set-Content -Path "d3d9proxy.vcxproj" -Value $projectContent
+          Set-Content -Path "d3d9proxy.vcxproj" -Value $projectContent
 
-        $defContent = @'
+          $defContent = @'
 LIBRARY d3d9.dll
 EXPORTS
     D3DPERF_BeginEvent=Real_D3DPERF_BeginEvent @1
@@ -113,14 +112,13 @@ EXPORTS
     Direct3DCreate9=Real_Direct3DCreate9 @10
     Direct3DCreate9Ex=Real_Direct3DCreate9Ex @11
 '@
-        Set-Content -Path "d3d9.def" -Value $defContent
+          Set-Content -Path "d3d9.def" -Value $defContent
 
-    - name: Build DLL
-      run: |
-        msbuild d3d9proxy.vcxproj /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+      - name: Build DLL
+        run: msbuild d3d9proxy.vcxproj /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: d3d9-proxy-dll
-        path: bin/d3d9.dll
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: d3d9-proxy-dll
+          path: bin/d3d9.dll
